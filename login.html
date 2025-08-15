@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<style>
+body { font-family: Arial, sans-serif; background:#f4f6f8; display:flex; justify-content:center; align-items:center; height:100vh; }
+.container { background:white; padding:30px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); width:300px; }
+input, button { width:100%; padding:10px; margin:10px 0; font-size:16px; border-radius:5px; border:1px solid #ccc; }
+button { background:#4F81BD; color:white; border:none; cursor:pointer; }
+button:hover { background:#3a65a1; }
+#error { color:red; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Login</h2>
+<input type="text" id="usuario" placeholder="Usuário">
+<input type="password" id="senha" placeholder="Senha">
+<button id="entrarBtn">Entrar</button>
+<button id="cadastrarBtn">Cadastrar-se</button>
+<div id="error"></div>
+</div>
+<script>
+const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+const entrarBtn = document.getElementById('entrarBtn');
+const cadastrarBtn = document.getElementById('cadastrarBtn');
+const errorDiv = document.getElementById('error');
+
+entrarBtn.addEventListener('click',()=>{
+    const u = document.getElementById('usuario').value.trim();
+    const s = document.getElementById('senha').value.trim();
+    const user = usuarios.find(x=>x.usuario===u && x.senha===s);
+    if(user){
+        localStorage.setItem('usuarioLogado', u);
+        window.location.href='./gastos.html';
+    }else{
+        errorDiv.textContent='Usuário não encontrado';
+    }
+});
+
+cadastrarBtn.addEventListener('click',()=>{
+    const u = document.getElementById('usuario').value.trim();
+    const s = document.getElementById('senha').value.trim();
+    if(u && s){
+        if(!usuarios.find(x=>x.usuario===u)){
+            usuarios.push({usuario:u,senha:s});
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            localStorage.setItem('usuarioLogado', u);
+            window.location.href='./gastos.html';
+        }else{
+            errorDiv.textContent='Usuário já existe';
+        }
+    }else{
+        errorDiv.textContent='Preencha todos os campos';
+    }
+});
+</script>
+</body>
+</html>

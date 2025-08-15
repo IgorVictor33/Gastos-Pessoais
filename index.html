@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Roboto',sans-serif;background:#f4f6f8;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+  .container{width:360px;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:28px}
+  h1{margin:0 0 12px;color:#4F81BD;text-align:center}
+  input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #d9dde3;font-size:16px}
+  button{background:#4F81BD;color:#fff;border:none;cursor:pointer;font-weight:600}
+  button:hover{background:#3a65a1}
+  .row{display:flex;gap:10px}
+  #error{color:#d93025;font-size:14px;min-height:18px;margin-top:6px;text-align:center}
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Login</h1>
+    <input type="text" id="usuario" placeholder="Usuário" autocomplete="username" />
+    <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" />
+    <div class="row">
+      <button id="entrarBtn">Entrar</button>
+      <button id="cadastrarBtn" type="button">Cadastrar-se</button>
+    </div>
+    <div id="error"></div>
+  </div>
+<script>
+  const $ = (id)=>document.getElementById(id);
+  const errorDiv = $('error');
+  const basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
+
+  function getUsuarios(){
+    try{ return JSON.parse(localStorage.getItem('usuarios')) || []; }
+    catch(e){ return []; }
+  }
+  function setUsuarios(arr){ localStorage.setItem('usuarios', JSON.stringify(arr)); }
+  function limparErro(){ errorDiv.textContent=''; }
+
+  $('entrarBtn').addEventListener('click', ()=>{
+    const u = $('usuario').value.trim();
+    const s = $('senha').value;
+    if(!u || !s){ errorDiv.textContent='Preencha usuário e senha.'; return; }
+    const usuarios = getUsuarios();
+    const ok = usuarios.find(x => x.usuario === u && x.senha === s);
+    if(!ok){ errorDiv.textContent='Usuário ou senha incorretos.'; return; }
+    localStorage.setItem('usuarioLogado', u);
+    window.location.href = basePath + 'gastos.html';
+  });
+
+  $('cadastrarBtn').addEventListener('click', ()=>{
+    const u = $('usuario').value.trim();
+    const s = $('senha').value;
+    if(!u || !s){ errorDiv.textContent='Informe usuário e senha para cadastrar.'; return; }
+    const usuarios = getUsuarios();
+    if(usuarios.some(x => x.usuario === u)){
+      errorDiv.textContent='Usuário já existe. Use outro nome.'; return;
+    }
+    usuarios.push({ usuario:u, senha:s });
+    setUsuarios(usuarios);
+    localStorage.setItem('usuarioLogado', u);
+    window.location.href = basePath + 'gastos.html';
+  });
+
+  $('usuario').addEventListener('input', limparErro);
+  $('senha').addEventListener('input', limparErro);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Enter') $('entrarBtn').click(); });
+</script>
+</body>
+</html>

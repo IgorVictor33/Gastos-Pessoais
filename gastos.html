@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Gastos</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: 'Roboto', sans-serif; margin:0; background:#f4f6f8; }
+.container { max-width:900px; margin:40px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+h1 { text-align:center; color:#4F81BD; font-size:28px; }
+input, button, select { padding:12px; margin:5px 0; border-radius:5px; border:1px solid #ccc; font-size:18px; }
+button { background:#4F81BD; color:white; border:none; cursor:pointer; }
+button:hover { background:#3a65a1; }
+table { width:100%; border-collapse:collapse; margin-top:20px; font-size:18px; }
+td, th { border:1px solid #ccc; padding:10px; text-align:left; }
+#sairBtn { float:right; }
+.total-box, .saldo-box { display:inline-block; padding:15px; border-radius:50%; margin-right:20px; min-width:150px; text-align:center; font-weight:bold; font-size:20px; }
+.total-box { background:#e0e7ff; color:#4F81BD; }
+.saldo-box.positivo { background:#d4edda; color:#155724; }
+.saldo-box.negativo { background:#f8d7da; color:#721c24; }
+#graficoContainer { margin-top:20px; }
+.action-btn { margin-right:5px; padding:5px 10px; font-size:16px; border-radius:5px; border:none; cursor:pointer; }
+.edit-btn { background:#FFA500; color:white; }
+.delete-btn { background:#FF4500; color:white; }
+.section { margin-top:20px; padding:15px; background:#f1f3f6; border-radius:8px; }
+.section h2 { font-size:22px; color:#4F81BD; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Controle de Gastos Pessoais <button id="sairBtn">Sair</button></h1>
+<div class="section" id="receitaSection">
+<h2>Receita Mensal</h2>
+<input type="number" id="receita" placeholder="Digite sua receita">
+<button id="atualizarReceitaBtn">Atualizar Receita</button>
+</div>
+<div class="section" id="gastosSection">
+<h2>Adicionar Gasto</h2>
+<input type="text" id="descricao" placeholder="Descrição">
+<input type="number" id="valor" placeholder="Valor">
+<input type="date" id="dataPagamento" placeholder="Dia do Pagamento">
+<button id="adicionarBtn">Adicionar Gasto</button>
+</div>
+<div>
+    <div id="totalGastos" class="total-box">Total: R$ 0.00</div>
+    <div id="saldo" class="saldo-box positivo">Saldo: R$ 0.00</div>
+</div>
+<table id="tabelaGastos">
+<thead><tr><th>Descrição</th><th>Valor</th><th>Data</th><th>Ações</th></tr></thead>
+<tbody></tbody>
+</table>
+<div id="graficoContainer"><canvas id="graficoGastos" height="100"></canvas></div>
+</div>
+<script>
+let usuarioAtual = localStorage.getItem('usuarioLogado');
+if(!usuarioAtual){ window.location.href='./login.html'; }
+let receita = parseFloat(localStorage.getItem('receita_' + usuarioAtual)) || 0;
+let gastos = JSON.parse(localStorage.getItem('gastos_' + usuarioAtual)) || [];
+const tabela = document.querySelector('#tabelaGastos tbody');
+const totalDiv = document.getElementById('totalGastos');
+const saldoDiv = document.getElementById('saldo');
+const receitaInput = document.getElementById('receita');
+receitaInput.value = receita;
+function formatarData(dataISO){ const d = new Date(dataISO); const dia = String(d.getDate()).padStart(2,'0'); const mes = String(d.getMonth()+1).padStart(2,'0'); const ano = d.getFullYear(); return `${dia}/${mes}/${ano}`; }
+function atualizarTabela(){ tabela.innerHTML=''; let total = 0; gastos.forEach((gasto,i)=>{ total += gasto.valor; const tr = document.createElement('tr'); tr.innerHTML=`<td>${gasto.descricao}</td><td>R$ ${gasto.valor.toFixed(2)}</td><td>${formatarData(gasto.data)}</td><td><button class='action-btn edit-btn' onclick='editarGasto(${i})'>Editar</button><button class='action-btn delete-btn' onclick='apagarGasto(${i})'>Apagar</button></td>`; tabela.appendChild(tr); }); totalDiv.textContent = 'Total: R$ ' + total.toFixed(2); const saldo = receita - total; saldoDiv.textContent = 'Saldo: R$ ' + saldo.toFixed(2); saldoDiv.className = 'saldo-box ' + (saldo >= 0 ? 'positivo' : 'negativo'); atualizarGrafico(); }
+function atualizarGrafico(){ const ctx = document.getElementById('graficoGastos').getContext('2d'); if(window.grafico){ window.grafico.destroy(); } window.grafico = new Chart(ctx, { type: 'bar', data: { labels: gastos.map(g => g.descricao), datasets: [{ label: 'Valor (R$)', data: gastos.map(g => g.valor), backgroundColor: '#4F81BD' }] }, options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} } }); }
+function editarGasto(index){ const gasto = gastos[index]; document.getElementById('descricao').value = gasto.descricao; document.getElementById('valor').value = gasto.valor; document.getElementById('dataPagamento').value = gasto.data; gastos.splice(index,1); localStorage.setItem('gastos_' + usuarioAtual, JSON.stringify(gastos)); atualizarTabela(); }
+function apagarGasto(index){ gastos.splice(index,1); localStorage.setItem('gastos_' + usuarioAtual, JSON.stringify(gastos)); atualizarTabela(); }
+document.getElementById('adicionarBtn').addEventListener('click',()=>{ const desc = document.getElementById('descricao').value.trim(); const val = parseFloat(document.getElementById('valor').value); const data = document.getElementById('dataPagamento').value; if(desc && !isNaN(val) && data){ gastos.push({descricao:desc,valor:val,data:data}); localStorage.setItem('gastos_' + usuarioAtual, JSON.stringify(gastos)); document.getElementById('descricao').value=''; document.getElementById('valor').value=''; document.getElementById('dataPagamento').value=''; atualizarTabela(); } });
+document.getElementById('atualizarReceitaBtn').addEventListener('click',()=>{ const val = parseFloat(receitaInput.value); if(!isNaN(val)){ receita = val; localStorage.setItem('receita_' + usuarioAtual, receita); atualizarTabela(); } });
+document.getElementById('sairBtn').addEventListener('click',()=>{ localStorage.removeItem('usuarioLogado'); window.location.href='./login.html'; });
+atualizarTabela();
+</script>
+</body>
+</html>
